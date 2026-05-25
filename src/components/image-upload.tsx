@@ -117,7 +117,7 @@ export function ImageUpload({
               )}
             </div>
             {isCompressing && (
-              <div className="mt-2 text-center text-blue-300 text-sm">
+              <div className="mt-2 text-center text-white text-sm">
                 Mengompresi gambar...
               </div>
             )}
@@ -134,7 +134,7 @@ export function ImageUpload({
                 <p className="text-sm font-medium text-white">
                   {isCompressing ? 'Mengompresi gambar...' : 'Upload Gambar'}
                 </p>
-                <p className="text-xs text-blue-400">
+                <p className="text-xs text-white">
                   Max {maxSizeMB} MB (dikompresi ke max {maxCompressedKB} KB)
                 </p>
               </div>
@@ -145,7 +145,7 @@ export function ImageUpload({
                   size="sm"
                   onClick={handleUploadClick}
                   disabled={disabled || isCompressing}
-                  className="border-blue-700 text-blue-300 hover:bg-blue-900/50 hover:text-white"
+                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Pilih File
@@ -157,7 +157,7 @@ export function ImageUpload({
                     size="sm"
                     onClick={handleCameraClick}
                     disabled={disabled || isCompressing}
-                    className="border-blue-700 text-blue-300 hover:bg-blue-900/50 hover:text-white"
+                    className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
                   >
                     <Camera className="h-4 w-4 mr-2" />
                     Kamera

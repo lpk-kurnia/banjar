@@ -6,11 +6,9 @@ export function ServiceWorkerProvider() {
   useEffect(() => {
     if ('serviceWorker' in navigator && typeof window !== 'undefined') {
       navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered with scope:', registration.scope)
+        .then((_registration) => {
         })
-        .catch((error) => {
-          console.log('Service Worker registration failed:', error)
+        .catch((_error) => {
         })
     }
   }, [])

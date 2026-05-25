@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers/session-provider";
 import { ServiceWorkerProvider } from "@/components/providers/service-worker-provider";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -21,7 +22,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "LPK Kurnia - Forum Komunitas Komputer",
-  description: "Belajar komputer gratis di LPK Kurnia. Bergabung dengan forum komunitas untuk berdiskusi tentang hardware, software, dan troubleshooting.",
+  description: "Ilmu komputer gratis di LPK Kurnia. Bergabung dengan forum komunitas untuk berdiskusi tentang hardware, software, dan troubleshooting.",
   keywords: ["LPK Kurnia", "Forum Komputer", "Belajar Komputer", "Hardware", "Software", "Troubleshooting"],
   authors: [{ name: "LPK Kurnia" }],
   icons: {

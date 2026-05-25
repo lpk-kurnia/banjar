@@ -1,7 +1,7 @@
 {
   "name": "LPK Kurnia - Forum Komunitas Komputer",
   "short_name": "LPK Kurnia",
-  "description": "Belajar komputer gratis di LPK Kurnia. Bergabung dengan forum komunitas untuk berdiskusi tentang hardware, software, dan troubleshooting.",
+  "description": "Ilmu komputer gratis di LPK Kurnia. Bergabung dengan forum komunitas untuk berdiskusi tentang hardware, software, dan troubleshooting.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

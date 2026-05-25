@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useEffect, useState, use } from 'react'
+import { useAuth } from '@/components/providers/session-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { ImageUpload } from '@/components/image-upload'
 import { AuthButton } from '@/components/auth/auth-button'
-import { MessageSquare, ArrowLeft, Send, Reply, Edit, Trash2, Pin, Lock, Clock, Eye, ThumbsUp, MessageCircle, Image as ImageIcon, X, Home, UserPlus } from 'lucide-react'
+import { MessageSquare, ArrowLeft, Send, Reply, Edit, Trash2, Pin, Lock, Clock, Eye, ThumbsUp, MessageCircle, Home, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -54,9 +54,16 @@ interface Comment {
   _count: { votes: number }
 }
 
-export default function ThreadDetailPage({ params }: { params: { id: string } }) {
-  const { data: session } = useSession()
+export default function ThreadDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { user, status: authStatus } = useAuth()
   const router = useRouter()
+
+  // Unwrap params Promise (Next.js 16 requirement)
+  const { id } = use(params)
+
+  const currentUser = user
+  const isAdmin = currentUser?.role === 'SUPER_ADMIN'
+  const isBanned = currentUser?.isBanned || false
   const [thread, setThread] = useState<Thread | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -70,11 +77,11 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
   useEffect(() => {
     fetchThread()
     fetchComments()
-  }, [params.id])
+  }, [id])
 
   const fetchThread = async () => {
     try {
-      const res = await fetch(`/api/threads/${params.id}`)
+      const res = await fetch(`/api/threads/${id}`)
       const data = await res.json()
       if (data.data) {
         setThread(data.data)
@@ -82,7 +89,6 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
         router.push('/forum')
       }
     } catch (error) {
-      console.error('Error fetching thread:', error)
       router.push('/forum')
     } finally {
       setIsLoading(false)
@@ -91,11 +97,10 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
 
   const fetchComments = async () => {
     try {
-      const res = await fetch(`/api/threads/${params.id}/comments`)
+      const res = await fetch(`/api/threads/${id}/comments`)
       const data = await res.json()
       setComments(data.data || [])
     } catch (error) {
-      console.error('Error fetching comments:', error)
     }
   }
 
@@ -104,7 +109,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
 
     setIsSubmitting(true)
     try {
-      const res = await fetch(`/api/threads/${params.id}/comments`, {
+      const res = await fetch(`/api/threads/${id}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -124,7 +129,6 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
         alert(data.error || 'Gagal mengirim komentar')
       }
     } catch (error) {
-      console.error('Error submitting reply:', error)
       alert('Terjadi kesalahan saat mengirim komentar')
     } finally {
       setIsSubmitting(false)
@@ -151,7 +155,6 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
         alert(data.error || 'Gagal mengedit komentar')
       }
     } catch (error) {
-      console.error('Error editing comment:', error)
       alert('Terjadi kesalahan saat mengedit komentar')
     } finally {
       setIsSubmitting(false)
@@ -173,14 +176,13 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
         alert(data.error || 'Gagal menghapus komentar')
       }
     } catch (error) {
-      console.error('Error deleting comment:', error)
       alert('Terjadi kesalahan saat menghapus komentar')
     }
   }
 
   const handleTogglePin = async () => {
     try {
-      const res = await fetch(`/api/admin/threads/${params.id}/pin`, {
+      const res = await fetch(`/api/admin/threads/${id}/pin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPinned: !thread?.isPinned })
@@ -192,14 +194,13 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
         alert('Gagal mengupdate pin status')
       }
     } catch (error) {
-      console.error('Error toggling pin:', error)
       alert('Terjadi kesalahan')
     }
   }
 
   const handleToggleLock = async () => {
     try {
-      const res = await fetch(`/api/admin/threads/${params.id}/lock`, {
+      const res = await fetch(`/api/admin/threads/${id}/lock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isLocked: !thread?.isLocked })
@@ -211,8 +212,31 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
         alert('Gagal mengupdate lock status')
       }
     } catch (error) {
-      console.error('Error toggling lock:', error)
       alert('Terjadi kesalahan')
+    }
+  }
+
+  const handleDeleteThread = async () => {
+    if (!confirm('Apakah Anda yakin ingin menghapus thread ini? Tindakan ini tidak dapat dibatalkan.')) return
+
+    try {
+      const res = await fetch(`/api/admin/threads/${id}`, {
+        method: 'DELETE'
+      })
+
+      if (res.ok) {
+        alert('Thread berhasil dihapus')
+        router.push('/forum')
+      } else {
+        try {
+          const data = await res.json()
+          alert(data.error || 'Gagal menghapus thread')
+        } catch {
+          alert(`Gagal menghapus thread: ${res.status} ${res.statusText}`)
+        }
+      }
+    } catch (error) {
+      alert('Terjadi kesalahan saat menghapus thread')
     }
   }
 
@@ -232,7 +256,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 pt-20">
         <div className="container mx-auto px-4 py-8">
-          <div className="text-center text-blue-300">Memuat thread...</div>
+          <div className="text-center text-white">Memuat thread...</div>
         </div>
       </div>
     )
@@ -250,7 +274,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             {/* Left Side - Back, Logo & Home */}
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <Link href="/forum" className="text-blue-300 hover:text-white transition-colors flex-shrink-0">
+              <Link href="/forum" className="text-white hover:text-blue-100 transition-colors flex-shrink-0">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div className="flex items-center gap-2">
@@ -265,7 +289,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-500 text-white border-blue-600"
+                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
                 >
                   <Home className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Beranda</span>
@@ -275,7 +299,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-500 text-white border-blue-600"
+                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Daftar LPK</span>
@@ -310,7 +334,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
               <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">
                 {thread.title}
               </h1>
-              <div className="flex items-center gap-4 text-sm text-blue-300 flex-wrap">
+              <div className="flex items-center gap-4 text-sm text-white flex-wrap">
                 <div className="flex items-center gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
                     thread.author.role === 'SUPER_ADMIN' ? 'bg-gradient-to-br from-yellow-500 to-orange-600' : 'bg-blue-800'
@@ -338,7 +362,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
               </div>
             </CardHeader>
             <CardContent>
-              <div className="prose prose-invert max-w-none text-blue-100 whitespace-pre-wrap">
+              <div className="prose prose-invert max-w-none text-white whitespace-pre-wrap">
                 {thread.content}
               </div>
               {thread.image && (
@@ -352,13 +376,13 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
               )}
 
               {/* Admin Actions */}
-              {session?.user?.role === 'SUPER_ADMIN' && (
+              {isAdmin && (
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t border-blue-800">
                   <Button
                     variant={thread.isPinned ? "default" : "outline"}
                     size="sm"
                     onClick={handleTogglePin}
-                    className={thread.isPinned ? "bg-blue-600 hover:bg-blue-500 text-white" : "border-blue-600 text-blue-300 hover:bg-blue-900/50 hover:text-white"}
+                    className="bg-blue-800 hover:bg-blue-600 text-white"
                   >
                     <Pin className="w-4 h-4 mr-2" />
                     {thread.isPinned ? 'Unpin' : 'Pin'}
@@ -367,10 +391,19 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                     variant={thread.isLocked ? "default" : "outline"}
                     size="sm"
                     onClick={handleToggleLock}
-                    className={thread.isLocked ? "bg-blue-600 hover:bg-blue-500 text-white" : "border-blue-600 text-blue-300 hover:bg-blue-900/50 hover:text-white"}
+                    className="bg-blue-800 hover:bg-blue-600 text-white"
                   >
                     <Lock className="w-4 h-4 mr-2" />
                     {thread.isLocked ? 'Unlock' : 'Lock'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeleteThread}
+                    className="border-red-600 text-red-400 hover:bg-red-600 hover:text-white"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Hapus Thread
                   </Button>
                 </div>
               )}
@@ -378,13 +411,13 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
           </Card>
 
           {/* Reply Form */}
-          {session && !session.user.isBanned && !thread.isLocked && (
+          {currentUser && !isBanned && !thread.isLocked && (
             <Card className="bg-blue-950/50 border-blue-800 mb-6">
               <CardContent className="p-4">
                 {replyTo ? (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-blue-300 text-sm">Membalas komentar...</span>
+                      <span className="text-white text-sm">Membalas komentar...</span>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -393,7 +426,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                           setReplyContent('')
                           setReplyImage(null)
                         }}
-                        className="text-blue-400 hover:text-white"
+                        className="text-white hover:text-blue-100"
                       >
                         Batal
                       </Button>
@@ -402,10 +435,10 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
                       placeholder="Tulis balasan..."
-                      className="bg-blue-900/50 border-blue-700 min-h-[100px]"
+                      className="bg-blue-900/50 border-blue-700 text-white min-h-[100px]"
                     />
                     <div className="space-y-2">
-                      <span className="text-blue-300 text-sm">Gambar (Opsional)</span>
+                      <span className="text-white text-sm">Gambar (Opsional)</span>
                       <ImageUpload
                         value={replyImage}
                         onChange={setReplyImage}
@@ -416,7 +449,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                     <Button
                       onClick={handleSubmitReply}
                       disabled={isSubmitting || (!replyContent.trim() && !replyImage)}
-                      className="bg-blue-600 hover:bg-blue-500 text-white"
+                      className="bg-blue-800 hover:bg-blue-600 text-white"
                     >
                       <Send className="w-4 h-4 mr-2" />
                       Kirim Balasan
@@ -428,10 +461,10 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                       value={replyContent}
                       onChange={(e) => setReplyContent(e.target.value)}
                       placeholder="Tulis komentar..."
-                      className="bg-blue-900/50 border-blue-700 min-h-[100px]"
+                      className="bg-blue-900/50 border-blue-700 text-white min-h-[100px]"
                     />
                     <div className="space-y-2">
-                      <span className="text-blue-300 text-sm">Gambar (Opsional)</span>
+                      <span className="text-white text-sm">Gambar (Opsional)</span>
                       <ImageUpload
                         value={replyImage}
                         onChange={setReplyImage}
@@ -442,7 +475,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                     <Button
                       onClick={() => handleSubmitReply()}
                       disabled={isSubmitting || (!replyContent.trim() && !replyImage)}
-                      className="bg-blue-600 hover:bg-blue-500 text-white"
+                      className="bg-blue-800 hover:bg-blue-600 text-white"
                     >
                       <Send className="w-4 h-4 mr-2" />
                       Kirim Komentar
@@ -453,7 +486,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
             </Card>
           )}
 
-          {session?.user.isBanned && (
+          {isBanned && (
             <Card className="bg-red-950/30 border-red-800 mb-6">
               <CardContent className="p-4 text-center text-red-300">
                 Akun Anda di-suspend, tidak bisa berkomentar.
@@ -470,10 +503,10 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
             </Card>
           )}
 
-          {!session && (
+          {!currentUser && (
             <Card className="bg-blue-950/50 border-blue-800 mb-6">
               <CardContent className="p-4 text-center">
-                <p className="text-blue-300 mb-2">Login untuk ikut berdiskusi</p>
+                <p className="text-white mb-2">Login untuk ikut berdiskusi</p>
               </CardContent>
             </Card>
           )}
@@ -485,7 +518,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
             </h2>
             {comments.length === 0 ? (
               <Card className="bg-blue-950/50 border-blue-800">
-                <CardContent className="p-8 text-center text-blue-300">
+                <CardContent className="p-8 text-center text-white">
                   Belum ada komentar. Jadilah yang pertama berkomentar!
                 </CardContent>
               </Card>
@@ -494,7 +527,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
                 <CommentItem
                   key={comment.id}
                   comment={comment}
-                  session={session}
+                  currentUser={currentUser}
                   replyTo={replyTo}
                   setReplyTo={setReplyTo}
                   editingComment={editingComment}
@@ -517,7 +550,7 @@ export default function ThreadDetailPage({ params }: { params: { id: string } })
 
 function CommentItem({
   comment,
-  session,
+  currentUser,
   replyTo,
   setReplyTo,
   editingComment,
@@ -530,7 +563,7 @@ function CommentItem({
   formatDate
 }: {
   comment: Comment
-  session: any
+  currentUser: any
   replyTo: string | null
   setReplyTo: (id: string | null) => void
   editingComment: string | null
@@ -542,8 +575,8 @@ function CommentItem({
   handleDeleteComment: (id: string) => void
   formatDate: (date: string) => string
 }) {
-  const isAuthor = session?.user?.id === comment.author.id
-  const isAdmin = session?.user?.role === 'SUPER_ADMIN'
+  const isAuthor = currentUser?.id === comment.author.id
+  const isAdmin = currentUser?.role === 'SUPER_ADMIN'
 
   return (
     <Card className="bg-blue-950/50 border-blue-800">
@@ -566,7 +599,7 @@ function CommentItem({
                   Admin
                 </Badge>
               )}
-              <span className="text-blue-400 text-xs">{formatDate(comment.createdAt)}</span>
+              <span className="text-white text-xs">{formatDate(comment.createdAt)}</span>
               {(isAuthor || isAdmin) && (
                 <div className="flex items-center gap-1">
                   {editingComment === comment.id ? (
@@ -577,7 +610,7 @@ function CommentItem({
                         setEditingComment(null)
                         setEditContent('')
                       }}
-                      className="text-blue-400 h-6 px-2"
+                      className="text-white h-6 px-2"
                     >
                       Batal
                     </Button>
@@ -590,7 +623,7 @@ function CommentItem({
                           setEditingComment(comment.id)
                           setEditContent(comment.content)
                         }}
-                        className="text-blue-400 h-6 px-2"
+                        className="text-white h-6 px-2"
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
@@ -613,20 +646,20 @@ function CommentItem({
                 <Textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="bg-blue-900/50 border-blue-700 min-h-[80px]"
+                  className="bg-blue-900/50 border-blue-700 text-white min-h-[80px]"
                 />
                 <Button
                   size="sm"
                   onClick={() => handleEditComment(comment.id)}
                   disabled={isSubmitting}
-                  className="bg-blue-600 hover:bg-blue-500 text-white"
+                  className="bg-blue-800 hover:bg-blue-600 text-white"
                 >
                   {isSubmitting ? 'Menyimpan...' : 'Simpan'}
                 </Button>
               </div>
             ) : (
               <>
-                <p className="text-blue-100 whitespace-pre-wrap break-words mb-2">
+                <p className="text-white whitespace-pre-wrap break-words mb-2">
                   {comment.content}
                 </p>
                 {comment.image && (
@@ -642,18 +675,18 @@ function CommentItem({
             )}
 
             <div className="flex items-center gap-3">
-              {session && !session.user.isBanned && replyTo !== comment.id && (
+              {currentUser && !currentUser.isBanned && replyTo !== comment.id && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setReplyTo(comment.id)}
-                  className="text-blue-400 hover:text-white h-8"
+                  className="text-white hover:text-blue-100 h-8"
                 >
                   <Reply className="w-3 h-3 mr-1" />
                   Balas
                 </Button>
               )}
-              <span className="text-blue-400 text-xs flex items-center gap-1">
+              <span className="text-white text-xs flex items-center gap-1">
                 <ThumbsUp className="w-3 h-3" />
                 {comment._count.votes}
               </span>
@@ -666,7 +699,7 @@ function CommentItem({
                   <CommentItem
                     key={reply.id}
                     comment={reply}
-                    session={session}
+                    currentUser={currentUser}
                     replyTo={replyTo}
                     setReplyTo={setReplyTo}
                     editingComment={editingComment}

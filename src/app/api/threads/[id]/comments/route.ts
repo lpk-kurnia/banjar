@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 export async function GET(
@@ -58,16 +57,16 @@ export async function POST(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
+    const currentUser = await getCurrentUser()
 
-    if (!session?.user) {
+    if (!currentUser) {
       return NextResponse.json(
         { error: 'Anda harus login untuk berkomentar' },
         { status: 401 }
       )
     }
 
-    if (session.user.isBanned) {
+    if (currentUser.isBanned) {
       return NextResponse.json(
         { error: 'Akun Anda di-suspend' },
         { status: 403 }
@@ -122,7 +121,7 @@ export async function POST(
         content: content || '',
         image: image || null,
         threadId: id,
-        authorId: session.user.id,
+        authorId: currentUser.id,
         parentId: parentId || null,
       },
       include: {

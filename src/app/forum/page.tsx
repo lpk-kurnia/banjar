@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/components/providers/session-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -51,13 +51,18 @@ interface Thread {
 }
 
 export default function ForumPage() {
-  const { data: session, status } = useSession()
+  const { user, status } = useAuth()
   const [categories, setCategories] = useState<Category[]>([])
   const [threads, setThreads] = useState<Thread[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+
+  const currentUser = user
+  const isBanned = currentUser?.isBanned || false
+  const isAuthorized = currentUser && !isBanned
 
   // Form state
   const [newThread, setNewThread] = useState({
@@ -78,7 +83,6 @@ export default function ForumPage() {
       const data = await res.json()
       setCategories(data.data || [])
     } catch (error) {
-      console.error('Error fetching categories:', error)
     }
   }
 
@@ -92,7 +96,6 @@ export default function ForumPage() {
       const data = await res.json()
       setThreads(data.data || [])
     } catch (error) {
-      console.error('Error fetching threads:', error)
     } finally {
       setIsLoading(false)
     }
@@ -120,17 +123,16 @@ export default function ForumPage() {
       if (res.ok) {
         setNewThread({ title: '', content: '', categoryId: '', image: null })
         setIsCreating(false)
+        setIsDialogOpen(false)
         fetchThreads()
-        alert('Thread berhasil dibuat!')
       } else {
         const data = await res.json()
+        setIsCreating(false)
         alert(data.error || 'Gagal membuat thread')
       }
     } catch (error) {
-      console.error('Error creating thread:', error)
-      alert('Terjadi kesalahan saat membuat thread')
-    } finally {
       setIsCreating(false)
+      alert('Terjadi kesalahan saat membuat thread')
     }
   }
 
@@ -171,7 +173,7 @@ export default function ForumPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-500 text-white border-blue-600"
+                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
                 >
                   <Home className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Beranda</span>
@@ -181,7 +183,7 @@ export default function ForumPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-500 text-white border-blue-600"
+                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
                 >
                   <UserPlus className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Daftar LPK</span>
@@ -209,7 +211,7 @@ export default function ForumPage() {
                       className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                         selectedCategory === null
                           ? 'bg-blue-600 text-white'
-                          : 'text-blue-200 hover:bg-blue-900/50'
+                          : 'text-white hover:bg-blue-900/50'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -226,7 +228,7 @@ export default function ForumPage() {
                         className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                           selectedCategory === category.id
                             ? 'bg-blue-600 text-white'
-                            : 'text-blue-200 hover:bg-blue-900/50'
+                            : 'text-white hover:bg-blue-900/50'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -257,10 +259,10 @@ export default function ForumPage() {
                     className="pl-10 bg-blue-950/50 border-blue-800 text-white placeholder:text-blue-400"
                   />
                 </div>
-                {session && !session.user.isBanned && (
-                  <Dialog open={isCreating} onOpenChange={setIsCreating}>
+                {isAuthorized && (
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-500 text-white whitespace-nowrap">
+                      <Button className="bg-blue-800 hover:bg-blue-600 text-white whitespace-nowrap">
                         <Plus className="w-4 h-4 mr-2" />
                         Buat Thread
                       </Button>
@@ -268,20 +270,23 @@ export default function ForumPage() {
                     <DialogContent className="bg-blue-950 border-blue-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Buat Thread Baru</DialogTitle>
+                        <DialogDescription className="text-white">
+                          Isi form di bawah untuk membuat thread baru di forum
+                        </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="category">Kategori</Label>
+                          <Label htmlFor="category" className="text-white">Kategori</Label>
                           <Select
                             value={newThread.categoryId}
                             onValueChange={(value) => setNewThread({ ...newThread, categoryId: value })}
                           >
-                            <SelectTrigger className="bg-blue-900/50 border-blue-700">
+                            <SelectTrigger className="bg-blue-900/50 border-blue-700 !text-white">
                               <SelectValue placeholder="Pilih kategori" />
                             </SelectTrigger>
-                            <SelectContent className="bg-blue-950 border-blue-800">
+                            <SelectContent className="!bg-blue-950 border-blue-800 !text-white">
                               {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
+                                <SelectItem key={category.id} value={category.id} className="!text-white focus:!bg-blue-800 focus:!text-white">
                                   {category.icon} {category.name}
                                 </SelectItem>
                               ))}
@@ -289,27 +294,28 @@ export default function ForumPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="title">Judul</Label>
+                          <Label htmlFor="title" className="text-white">Judul</Label>
                           <Input
                             id="title"
+                            type="text"
                             value={newThread.title}
                             onChange={(e) => setNewThread({ ...newThread, title: e.target.value })}
-                            className="bg-blue-900/50 border-blue-700"
+                            className="bg-blue-900/50 border-blue-700 text-white"
                             placeholder="Masukkan judul thread"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="content">Konten</Label>
+                          <Label htmlFor="content" className="text-white">Konten</Label>
                           <Textarea
                             id="content"
                             value={newThread.content}
                             onChange={(e) => setNewThread({ ...newThread, content: e.target.value })}
-                            className="bg-blue-900/50 border-blue-700 min-h-[150px]"
+                            className="bg-blue-900/50 border-blue-700 text-white min-h-[150px]"
                             placeholder="Tulis konten thread Anda..."
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Gambar (Opsional)</Label>
+                          <Label className="text-white">Gambar (Opsional)</Label>
                           <ImageUpload
                             value={newThread.image}
                             onChange={(image) => setNewThread({ ...newThread, image })}
@@ -317,13 +323,15 @@ export default function ForumPage() {
                             maxCompressedKB={300}
                           />
                         </div>
-                        <Button
-                          onClick={handleCreateThread}
-                          disabled={isCreating}
-                          className="w-full bg-blue-600 hover:bg-blue-500 text-white"
-                        >
-                          {isCreating ? 'Membuat...' : 'Buat Thread'}
-                        </Button>
+                        <div className="pt-4">
+                          <Button
+                            onClick={handleCreateThread}
+                            disabled={isCreating}
+                            className="w-full bg-blue-800 hover:bg-blue-600 text-white"
+                          >
+                            {isCreating ? 'Membuat...' : 'Buat Thread'}
+                          </Button>
+                        </div>
                       </div>
                     </DialogContent>
                   </Dialog>
@@ -332,18 +340,18 @@ export default function ForumPage() {
 
               {/* Threads List */}
               {isLoading ? (
-                <div className="text-center py-12 text-blue-300">
+                <div className="text-center py-12 text-white">
                   Memuat threads...
                 </div>
               ) : filteredThreads.length === 0 ? (
                 <Card className="bg-blue-950/50 border-blue-800">
                   <CardContent className="py-12 text-center">
                     <MessageSquare className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-                    <p className="text-blue-300">
+                    <p className="text-white">
                       {searchQuery ? 'Tidak ada thread yang ditemukan' : 'Belum ada thread'}
                     </p>
-                    {!session && (
-                      <p className="text-blue-400 text-sm mt-2">
+                    {!currentUser && (
+                      <p className="text-white text-sm mt-2">
                         Login untuk membuat thread pertama
                       </p>
                     )}
@@ -363,7 +371,7 @@ export default function ForumPage() {
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <h3 className="text-white font-semibold hover:text-blue-300 transition-colors line-clamp-1">
+                                <h3 className="text-white font-semibold hover:text-blue-100 transition-colors line-clamp-1">
                                   {thread.title}
                                 </h3>
                                 {thread.isPinned && (
@@ -373,10 +381,10 @@ export default function ForumPage() {
                                   <Lock className="w-4 h-4 text-red-400 flex-shrink-0" />
                                 )}
                               </div>
-                              <p className="text-blue-300 text-sm line-clamp-2 mb-2">
+                              <p className="text-white text-sm line-clamp-2 mb-2">
                                 {thread.content}
                               </p>
-                              <div className="flex items-center gap-4 text-xs text-blue-400 flex-wrap">
+                              <div className="flex items-center gap-4 text-xs text-white flex-wrap">
                                 <span className="flex items-center gap-1">
                                   {thread.category.icon} {thread.category.name}
                                 </span>

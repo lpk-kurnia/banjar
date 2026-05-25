@@ -1,99 +1,60 @@
-import { NextAuthOptions, User } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
+import { createClient } from '@/lib/supabase/server'
 import { db } from '@/lib/db'
+import { Role } from '@prisma/client'
 
-export const authOptions: NextAuthOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || 'mock-client-id',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'mock-client-secret',
-      authorization: {
-        params: {
-          prompt: 'consent',
-          access_type: 'offline',
-          response_type: 'code',
-        },
-      },
-    }),
-  ],
-  callbacks: {
-    async signIn({ user, account }) {
-      if (!user.email) return false
+export interface AuthUser {
+  id: string        // Our DB user id (cuid)
+  authId: string    // Supabase auth uid
+  email: string
+  name: string | null
+  avatar: string | null
+  role: Role
+  isBanned: boolean
+}
 
-      try {
-        // Ambil list super admin email dari environment variable
-        const superAdminEmails = (process.env.SUPER_ADMIN_EMAIL || '')
-          .split(',')
-          .map(email => email.trim().toLowerCase())
-          .filter(email => email.length > 0)
+/**
+ * Get the current authenticated user from Supabase session + our DB.
+ * For use in API routes (server-side only).
+ */
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-        // Cek apakah user adalah super admin
-        const isSuperAdmin = superAdminEmails.includes(user.email.toLowerCase())
+    if (!user) return null
 
-        // Cek apakah user sudah ada di database
-        const existingUser = await db.user.findUnique({
-          where: { email: user.email },
+    // Find user in our DB by Supabase auth ID
+    let dbUser = await db.user.findUnique({
+      where: { authId: user.id }
+    })
+
+    // Fallback: find by email (for migration)
+    if (!dbUser && user.email) {
+      dbUser = await db.user.findUnique({
+        where: { email: user.email }
+      })
+      if (dbUser) {
+        // Link the authId to existing user
+        await db.user.update({
+          where: { id: dbUser.id },
+          data: { authId: user.id }
         })
-
-        if (!existingUser) {
-          // Buat user baru dengan role sesuai
-          await db.user.create({
-            data: {
-              email: user.email,
-              name: user.name || 'User',
-              avatar: user.image || null,
-              role: isSuperAdmin ? 'SUPER_ADMIN' : 'USER',
-            },
-          })
-        } else {
-          // Update role jika user adalah super admin tapi role di database belum SUPER_ADMIN
-          if (isSuperAdmin && existingUser.role !== 'SUPER_ADMIN') {
-            await db.user.update({
-              where: { email: user.email },
-              data: { role: 'SUPER_ADMIN' }
-            })
-          }
-        }
-
-        return true
-      } catch (error) {
-        console.error('Error in signIn callback:', error)
-        return false
       }
-    },
+    }
 
-    async session({ session, token }) {
-      if (session.user?.email) {
-        try {
-          const dbUser = await db.user.findUnique({
-            where: { email: session.user.email },
-          })
+    if (!dbUser) return null
 
-          if (dbUser) {
-            session.user.id = dbUser.id
-            session.user.role = dbUser.role
-            session.user.isBanned = dbUser.isBanned
-          }
-        } catch (error) {
-          console.error('Error in session callback:', error)
-        }
-      }
-      return session
-    },
-
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-      }
-      return token
-    },
-  },
-  pages: {
-    signIn: '/forum',
-    error: '/forum',
-  },
-  session: {
-    strategy: 'jwt',
-  },
-  secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-change-in-production',
+    return {
+      id: dbUser.id,
+      authId: user.id,
+      email: dbUser.email,
+      name: dbUser.name,
+      avatar: dbUser.avatar,
+      role: dbUser.role,
+      isBanned: dbUser.isBanned,
+    }
+  } catch (error) {
+    console.error('Error getting current user:', error)
+    return null
+  }
 }

@@ -72,16 +72,16 @@ export default function Home() {
               <span className="text-xl font-bold text-white">LPK Kurnia</span>
             </div>
             <div className="flex items-center gap-6">
-              <a href="#about" className="text-blue-200 hover:text-white transition-colors">Tentang</a>
-              <a href="#programs" className="text-blue-200 hover:text-white transition-colors">Program</a>
-              <a href="#register" className="text-blue-200 hover:text-white transition-colors">Daftar</a>
-              <Button asChild className="bg-blue-600 hover:bg-blue-500 text-white">
+              <a href="#about" className="text-white hover:text-blue-100 transition-colors">Tentang</a>
+              <a href="#programs" className="text-white hover:text-blue-100 transition-colors">Program</a>
+              <a href="#register" className="text-white hover:text-blue-100 transition-colors">Daftar</a>
+              <Button asChild className="bg-blue-800 hover:bg-blue-600 text-white">
                 <a href="/forum">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Forum
                 </a>
               </Button>
-              <Button asChild className="bg-blue-600 hover:bg-blue-500 text-white">
+              <Button asChild className="bg-blue-800 hover:bg-blue-600 text-white">
                 <a href="/admin">
                   <Shield className="w-4 h-4 mr-2" />
                   Admin
@@ -93,20 +93,20 @@ export default function Home() {
           {/* Mobile Menu */}
           {isMenuOpen && (
             <div className="md:hidden mt-4 pb-4 border-t border-blue-800 pt-4 space-y-3">
-              <div className="text-blue-300 font-semibold mb-2">
+              <div className="text-white font-semibold mb-2">
                 <Menu className="w-4 h-4 inline mr-2" />
                 Menu
               </div>
-              <a href="#about" onClick={() => setIsMenuOpen(false)} className="block text-blue-200 hover:text-white transition-colors py-2">Tentang</a>
-              <a href="#programs" onClick={() => setIsMenuOpen(false)} className="block text-blue-200 hover:text-white transition-colors py-2">Program</a>
-              <a href="#register" onClick={() => setIsMenuOpen(false)} className="block text-blue-200 hover:text-white transition-colors py-2">Daftar</a>
-              <Button asChild className="w-full bg-blue-600 hover:bg-blue-500 text-white">
+              <a href="#about" onClick={() => setIsMenuOpen(false)} className="block text-white hover:text-blue-100 transition-colors py-2">Tentang</a>
+              <a href="#programs" onClick={() => setIsMenuOpen(false)} className="block text-white hover:text-blue-100 transition-colors py-2">Program</a>
+              <a href="#register" onClick={() => setIsMenuOpen(false)} className="block text-white hover:text-blue-100 transition-colors py-2">Daftar</a>
+              <Button asChild className="w-full bg-blue-800 hover:bg-blue-600 text-white">
                 <a href="/forum" onClick={() => setIsMenuOpen(false)}>
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Forum
                 </a>
               </Button>
-              <Button asChild className="w-full bg-blue-600 hover:bg-blue-500 text-white">
+              <Button asChild className="w-full bg-blue-800 hover:bg-blue-600 text-white">
                 <a href="/admin" onClick={() => setIsMenuOpen(false)}>
                   <Shield className="w-4 h-4 mr-2" />
                   Admin
@@ -124,23 +124,23 @@ export default function Home() {
             Pendaftaran GRATIS
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            Belajar Komputer Gratis di
+            Ilmu Komputer Gratis di
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
               {' '}LPK Kurnia
             </span>
           </h1>
-          <p className="text-xl text-blue-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-white mb-8 max-w-2xl mx-auto">
             Dapatkan keahlian hardware dan software komputer yang komprehensif.
             Bergabung dengan komunitas belajar dan forum diskusi aktif.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-500 text-white">
+            <Button asChild size="lg" className="bg-blue-800 hover:bg-blue-600 text-white">
               <a href="#register">
                 Daftar Sekarang
                 <ArrowRight className="w-4 h-4 ml-2" />
               </a>
             </Button>
-            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-500 text-white">
+            <Button asChild size="lg" className="bg-blue-800 hover:bg-blue-600 text-white">
               <a href="/forum">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Join Forum
@@ -152,19 +152,19 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-1">500+</div>
-              <div className="text-blue-300 text-sm">Siswa Terdaftar</div>
+              <div className="text-white text-sm">Siswa Terdaftar</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-1">2</div>
-              <div className="text-blue-300 text-sm">Program Unggulan</div>
+              <div className="text-white text-sm">Program Unggulan</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-1">100%</div>
-              <div className="text-blue-300 text-sm">Gratis</div>
+              <div className="text-white text-sm">Gratis</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-1">24/7</div>
-              <div className="text-blue-300 text-sm">Forum Aktif</div>
+              <div className="text-white text-sm">Forum Aktif</div>
             </div>
           </div>
         </div>
@@ -177,7 +177,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Tentang LPK Kurnia
             </h2>
-            <p className="text-blue-200 max-w-2xl mx-auto">
+            <p className="text-white max-w-2xl mx-auto">
               LPK Kurnia hadir untuk memberikan pelatihan komputer berkualitas secara GRATIS
               bagi generasi muda yang ingin mendalami dunia teknologi.
             </p>
@@ -190,7 +190,7 @@ export default function Home() {
                 <CardTitle className="text-white">Pengajar Berpengalaman</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-blue-200">
+                <CardDescription className="text-white">
                   Diajar oleh praktisi yang berpengalaman di bidang hardware dan software komputer.
                 </CardDescription>
               </CardContent>
@@ -202,7 +202,7 @@ export default function Home() {
                 <CardTitle className="text-white">Komunitas Aktif</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-blue-200">
+                <CardDescription className="text-white">
                   Bergabung dengan forum diskusi aktif untuk berbagi ilmu dan pengalaman.
                 </CardDescription>
               </CardContent>
@@ -214,7 +214,7 @@ export default function Home() {
                 <CardTitle className="text-white">Sertifikat Gratis</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-blue-200">
+                <CardDescription className="text-white">
                   Dapatkan sertifikat resmi setelah menyelesaikan program pelatihan.
                 </CardDescription>
               </CardContent>
@@ -230,7 +230,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Program Pelatihan
             </h2>
-            <p className="text-blue-200 max-w-2xl mx-auto">
+            <p className="text-white max-w-2xl mx-auto">
               Pilih program yang sesuai dengan minat dan kebutuhan karir Anda.
             </p>
           </div>
@@ -239,15 +239,15 @@ export default function Home() {
             <Card className="bg-gradient-to-br from-blue-950 to-blue-900 border-blue-700 hover:border-blue-500 transition-all">
               <CardHeader>
                 <div className="w-14 h-14 bg-blue-800 rounded-lg flex items-center justify-center mb-4">
-                  <Cpu className="w-8 h-8 text-blue-300" />
+                  <Cpu className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-white text-2xl">Hardware</CardTitle>
-                <CardDescription className="text-blue-300">
+                <CardDescription className="text-white">
                   Pelajari perakitan, perbaikan, dan maintenance komputer
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-blue-200">
+                <ul className="space-y-2 text-white">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                     <span>Rakit PC dari nol</span>
@@ -271,15 +271,15 @@ export default function Home() {
             <Card className="bg-gradient-to-br from-blue-950 to-blue-900 border-blue-700 hover:border-blue-500 transition-all">
               <CardHeader>
                 <div className="w-14 h-14 bg-blue-800 rounded-lg flex items-center justify-center mb-4">
-                  <HardDrive className="w-8 h-8 text-blue-300" />
+                  <HardDrive className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-white text-2xl">Software</CardTitle>
-                <CardDescription className="text-blue-300">
+                <CardDescription className="text-white">
                   Kuasai sistem operasi, aplikasi, dan pemrograman dasar
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-blue-200">
+                <ul className="space-y-2 text-white">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
                     <span>Instalasi Windows & Linux</span>
@@ -310,7 +310,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Daftar Sekarang - GRATIS
             </h2>
-            <p className="text-blue-200">
+            <p className="text-white">
               Isi formulir di bawah ini untuk mendaftar program pelatihan.
             </p>
           </div>
@@ -318,14 +318,14 @@ export default function Home() {
           <Card className="bg-blue-950/50 border-blue-800">
             <CardHeader>
               <CardTitle className="text-white">Formulir Pendaftaran</CardTitle>
-              <CardDescription className="text-blue-300">
+              <CardDescription className="text-white">
                 Data Anda akan aman dan hanya digunakan untuk keperluan pendaftaran LPK Kurnia.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-blue-200">Nama Lengkap</Label>
+                  <Label htmlFor="name" className="text-white">Nama Lengkap</Label>
                   <Input
                     id="name"
                     required
@@ -337,7 +337,7 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-blue-200">Email</Label>
+                  <Label htmlFor="email" className="text-white">Email</Label>
                   <Input
                     id="email"
                     type="email"
@@ -350,7 +350,7 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="whatsapp" className="text-blue-200">No WhatsApp</Label>
+                  <Label htmlFor="whatsapp" className="text-white">No WhatsApp</Label>
                   <Input
                     id="whatsapp"
                     required
@@ -362,7 +362,7 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address" className="text-blue-200">Alamat</Label>
+                  <Label htmlFor="address" className="text-white">Alamat</Label>
                   <Textarea
                     id="address"
                     required
@@ -374,7 +374,7 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="program" className="text-blue-200">Program yang Diminati</Label>
+                  <Label htmlFor="program" className="text-white">Program yang Diminati</Label>
                   <select
                     id="program"
                     required
@@ -408,7 +408,7 @@ export default function Home() {
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white"
+                  className="w-full bg-blue-800 hover:bg-blue-600 text-white"
                 >
                   {isSubmitting ? 'Mengirim...' : 'Daftar Sekarang'}
                 </Button>
@@ -427,52 +427,51 @@ export default function Home() {
                 <img src="/icon-192x192.png" alt="LPK Kurnia Logo" className="w-10 h-10 rounded-lg" />
                 <span className="text-xl font-bold text-white">LPK Kurnia</span>
               </div>
-              <p className="text-blue-300 text-sm">
-                Lembaga Pelatihan Kerja yang berfokus pada pendidikan komputer
-                hardware dan software secara gratis.
+              <p className="text-white text-sm">
+                lembaga pendidikan non-formal di Kota Banjar yang berfokus pada pelatihan keterampilan kerja, khususnya di bidang teknologi informasi dan aplikasi perkantoran secara gratis.
               </p>
             </div>
 
             <div>
               <h3 className="text-white font-semibold mb-4">Kontak</h3>
-              <ul className="space-y-2 text-blue-300 text-sm">
+              <ul className="space-y-2 text-white text-sm">
                 <li className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  <span>Jl. Contoh No. 123, Indonesia</span>
+                  <span>Jl. Tentara Pelajar No. 25, Sumanding, Kota Banjar, Jawa Barat</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  <span>+62 812-3456-7890</span>
+                  <span>(0265) 2732082</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  <span>info@lpkkurnia.com</span>
+                  <span>lpkkurnia@outlook.com</span>
                 </li>
               </ul>
             </div>
 
             <div>
               <h3 className="text-white font-semibold mb-4">Link Cepat</h3>
-              <ul className="space-y-2 text-blue-300 text-sm">
+              <ul className="space-y-2 text-white text-sm">
                 <li>
-                  <a href="#about" className="hover:text-white transition-colors">Tentang Kami</a>
+                  <a href="#about" className="hover:text-blue-100 transition-colors">Tentang Kami</a>
                 </li>
                 <li>
-                  <a href="#programs" className="hover:text-white transition-colors">Program</a>
+                  <a href="#programs" className="hover:text-blue-100 transition-colors">Program</a>
                 </li>
                 <li>
-                  <a href="#register" className="hover:text-white transition-colors">Daftar</a>
+                  <a href="#register" className="hover:text-blue-100 transition-colors">Daftar</a>
                 </li>
                 <li>
-                  <a href="/forum" className="hover:text-white transition-colors">Forum</a>
+                  <a href="/forum" className="hover:text-blue-100 transition-colors">Forum</a>
                 </li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-blue-800 pt-8 text-center">
-            <p className="text-blue-400 text-sm">
-              © {new Date().getFullYear()} LPK Kurnia. Semua hak dilindungi.
+            <p className="text-white text-sm">
+              © {new Date().getFullYear()} LPK Kurnia. By GTX Semua hak dilindungi.
             </p>
           </div>
         </div>

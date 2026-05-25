@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
 
-export async function POST(
+export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -12,22 +12,32 @@ export async function POST(
 
     if (!currentUser || currentUser.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Hanya SUPER_ADMIN yang dapat menghapus thread' },
         { status: 403 }
       )
     }
 
-    const body = await request.json()
-    const { isPinned } = body
-
-    const thread = await db.thread.update({
-      where: { id },
-      data: { isPinned }
+    const thread = await db.thread.findUnique({
+      where: { id }
     })
 
-    return NextResponse.json({ data: thread })
+    if (!thread) {
+      return NextResponse.json(
+        { error: 'Thread tidak ditemukan' },
+        { status: 404 }
+      )
+    }
+
+    await db.thread.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Thread berhasil dihapus'
+    })
   } catch (error) {
-    console.error('Error pinning thread:', error)
+    console.error('Error deleting thread:', error)
     return NextResponse.json(
       { error: 'Terjadi kesalahan' },
       { status: 500 }

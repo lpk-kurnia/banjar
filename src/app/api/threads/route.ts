@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 export async function GET(request: NextRequest) {
@@ -52,16 +51,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const currentUser = await getCurrentUser()
 
-    if (!session?.user) {
+    if (!currentUser) {
       return NextResponse.json(
         { error: 'Anda harus login untuk membuat thread' },
         { status: 401 }
       )
     }
 
-    if (session.user.isBanned) {
+    if (currentUser.isBanned) {
       return NextResponse.json(
         { error: 'Akun Anda di-suspend' },
         { status: 403 }
@@ -78,7 +77,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Cek kategori ada
     const category = await db.category.findUnique({
       where: { id: categoryId }
     })
@@ -96,7 +94,7 @@ export async function POST(request: NextRequest) {
         content,
         image: image || null,
         categoryId,
-        authorId: session.user.id,
+        authorId: currentUser.id,
       },
       include: {
         author: {

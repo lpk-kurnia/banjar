@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAuth } from '@/components/providers/session-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { LayoutDashboard, Users, FileText, Download, Search, ArrowLeft, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
 
 interface Registration {
   id: string
@@ -23,7 +22,7 @@ interface Registration {
 }
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession()
+  const { user, status, signOut } = useAuth()
   const router = useRouter()
   const [registrations, setRegistrations] = useState<Registration[]>([])
   const [filteredRegistrations, setFilteredRegistrations] = useState<Registration[]>([])
@@ -31,16 +30,18 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'registrations' | 'users'>('registrations')
 
+  const currentUser = user
+
   useEffect(() => {
     if (status === 'loading') return
 
-    if (!session || session.user.role !== 'SUPER_ADMIN') {
+    if (!user || user.role !== 'SUPER_ADMIN') {
       router.push('/forum')
       return
     }
 
     fetchRegistrations()
-  }, [session, status, router])
+  }, [user, status, router])
 
   useEffect(() => {
     if (searchQuery) {
@@ -63,7 +64,6 @@ export default function AdminDashboard() {
       setRegistrations(data.data || [])
       setFilteredRegistrations(data.data || [])
     } catch (error) {
-      console.error('Error fetching registrations:', error)
     } finally {
       setIsLoading(false)
     }
@@ -118,11 +118,17 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleLogout = async () => {
+    await signOut()
+  }
+
   if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 pt-20">
         <div className="container mx-auto px-4 py-8">
-          <div className="text-center text-blue-300">Loading...</div>
+          <div className="text-center text-white">
+            <p>Loading...</p>
+          </div>
         </div>
       </div>
     )
@@ -134,7 +140,7 @@ export default function AdminDashboard() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-blue-950/95 backdrop-blur-sm border-b border-blue-800">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/forum" className="text-blue-300 hover:text-white transition-colors">
+            <Link href="/forum" className="text-white hover:text-blue-100 transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div className="flex items-center gap-2">
@@ -143,12 +149,12 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-blue-300">{session?.user?.name}</span>
+            <span className="text-white">{currentUser?.name}</span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => signOut()}
-              className="bg-blue-600 hover:bg-blue-500 text-white border-blue-600"
+              onClick={handleLogout}
+              className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
             >
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -173,7 +179,7 @@ export default function AdminDashboard() {
                       className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                         activeTab === 'registrations'
                           ? 'bg-blue-600 text-white'
-                          : 'text-blue-200 hover:bg-blue-900/50'
+                          : 'text-white hover:bg-blue-900/50'
                       }`}
                     >
                       <FileText className="w-4 h-4" />
@@ -184,7 +190,7 @@ export default function AdminDashboard() {
                       className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                         activeTab === 'users'
                           ? 'bg-blue-600 text-white'
-                          : 'text-blue-200 hover:bg-blue-900/50'
+                          : 'text-white hover:bg-blue-900/50'
                       }`}
                     >
                       <Users className="w-4 h-4" />
@@ -216,7 +222,7 @@ export default function AdminDashboard() {
                         <Button
                           onClick={downloadCSV}
                           disabled={filteredRegistrations.length === 0}
-                          className="bg-blue-600 hover:bg-blue-500 text-white whitespace-nowrap"
+                          className="bg-blue-800 hover:bg-blue-600 !text-white whitespace-nowrap"
                         >
                           <Download className="w-4 h-4 mr-2" />
                           Download Excel
@@ -226,7 +232,7 @@ export default function AdminDashboard() {
                   </CardHeader>
                   <CardContent>
                     {filteredRegistrations.length === 0 ? (
-                      <div className="text-center py-12 text-blue-300">
+                      <div className="text-center py-12 text-white">
                         {searchQuery ? 'Tidak ada data yang ditemukan' : 'Belum ada pendaftar'}
                       </div>
                     ) : (
@@ -234,17 +240,17 @@ export default function AdminDashboard() {
                         <Table>
                           <TableHeader>
                             <TableRow className="border-blue-800">
-                              <TableHead className="text-blue-200">No</TableHead>
-                              <TableHead className="text-blue-200">Nama</TableHead>
-                              <TableHead className="text-blue-200">No WhatsApp</TableHead>
+                              <TableHead className="text-white">No</TableHead>
+                              <TableHead className="text-white">Nama</TableHead>
+                              <TableHead className="text-white">No WhatsApp</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {filteredRegistrations.map((reg, index) => (
                               <TableRow key={reg.id} className="border-blue-800 hover:bg-blue-900/30">
-                                <TableCell className="text-blue-100">{index + 1}</TableCell>
-                                <TableCell className="text-blue-100 font-medium">{reg.name}</TableCell>
-                                <TableCell className="text-blue-300">{reg.whatsapp}</TableCell>
+                                <TableCell className="text-white">{index + 1}</TableCell>
+                                <TableCell className="text-white font-medium">{reg.name}</TableCell>
+                                <TableCell className="text-white">{reg.whatsapp}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -262,7 +268,7 @@ export default function AdminDashboard() {
                     <CardTitle className="text-white">Manajemen User</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-12 text-blue-300">
+                    <div className="text-center py-12 text-white">
                       <Users className="w-12 h-12 text-blue-400 mx-auto mb-4" />
                       <p>Fitur manajemen user akan segera hadir.</p>
                       <p className="text-sm mt-2">Anda bisa ban/unban user langsung dari halaman forum.</p>

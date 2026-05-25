@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 import { db } from '@/lib/db'
 
 export async function GET(
@@ -46,9 +45,9 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
+    const currentUser = await getCurrentUser()
 
-    if (!session?.user) {
+    if (!currentUser) {
       return NextResponse.json(
         { error: 'Anda harus login' },
         { status: 401 }
@@ -78,8 +77,8 @@ export async function PATCH(
     }
 
     // Cek apakah user adalah author atau admin
-    const isAuthor = comment.authorId === session.user.id
-    const isAdmin = session.user.role === 'SUPER_ADMIN'
+    const isAuthor = comment.authorId === currentUser.id
+    const isAdmin = currentUser.role === 'SUPER_ADMIN'
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json(
@@ -119,9 +118,9 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
+    const currentUser = await getCurrentUser()
 
-    if (!session?.user) {
+    if (!currentUser) {
       return NextResponse.json(
         { error: 'Anda harus login' },
         { status: 401 }
@@ -141,8 +140,8 @@ export async function DELETE(
     }
 
     // Cek apakah user adalah author atau admin
-    const isAuthor = comment.authorId === session.user.id
-    const isAdmin = session.user.role === 'SUPER_ADMIN'
+    const isAuthor = comment.authorId === currentUser.id
+    const isAdmin = currentUser.role === 'SUPER_ADMIN'
 
     if (!isAuthor && !isAdmin) {
       return NextResponse.json(
