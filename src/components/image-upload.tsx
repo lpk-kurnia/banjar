@@ -3,17 +3,32 @@
 import { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Upload, X, Image as ImageIcon, Camera } from 'lucide-react'
+import { Upload, X, Image as ImageIcon, Camera, Loader2 } from 'lucide-react'
 import { compressImage, validateImageFile, getBase64Size } from '@/lib/image-compress'
 
 interface ImageUploadProps {
   value?: string | null
-  onChange: (base64: string | null) => void
+  onChange: (url: string | null) => void
   maxSizeMB?: number
   maxCompressedKB?: number
   disabled?: boolean
   className?: string
   showCamera?: boolean
+}
+
+/**
+ * Convert base64 data URL to File object
+ */
+function base64ToFile(base64: string, filename: string): File {
+  const parts = base64.split(',')
+  const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
+  const bstr = atob(parts[1])
+  let n = bstr.length
+  const u8arr = new Uint8Array(n)
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n)
+  }
+  return new File([u8arr], filename, { type: mime })
 }
 
 export function ImageUpload({
@@ -25,7 +40,7 @@ export function ImageUpload({
   className = '',
   showCamera = true
 }: ImageUploadProps) {
-  const [isCompressing, setIsCompressing] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(value || null)
   const [compressedSize, setCompressedSize] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -35,32 +50,58 @@ export function ImageUpload({
   const handleFileSelect = async (file: File) => {
     setError(null)
 
-    // Validate file
+    // Validate file type
     const validation = validateImageFile(file, maxSizeMB)
     if (!validation.valid) {
       setError(validation.error || 'File tidak valid')
       return
     }
 
-    setIsCompressing(true)
+    setIsProcessing(true)
+
+    // Create local preview immediately
+    const localPreview = URL.createObjectURL(file)
+    setPreviewUrl(localPreview)
 
     try {
-      // Compress image
+      // Step 1: Compress image client-side
       const compressedBase64 = await compressImage(file, {
         maxSizeKB: maxCompressedKB
       })
-
-      // Calculate size
       const sizeKB = getBase64Size(compressedBase64)
       setCompressedSize(sizeKB)
 
-      // Update preview and value
-      setPreviewUrl(compressedBase64)
-      onChange(compressedBase64)
+      // Step 2: Convert compressed base64 to File
+      const ext = file.name.split('.').pop() || 'jpg'
+      const compressedFile = base64ToFile(compressedBase64, `compressed-${Date.now()}.${ext}`)
+
+      // Step 3: Upload compressed file to Supabase Storage
+      const formData = new FormData()
+      formData.append('file', compressedFile)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Gagal mengupload gambar')
+        setPreviewUrl(value || null)
+        setCompressedSize(null)
+        return
+      }
+
+      // Step 4: Update with public URL from Storage
+      setPreviewUrl(data.data.url)
+      onChange(data.data.url)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal mengompresi gambar')
+      setError(err instanceof Error ? err.message : 'Terjadi kesalahan saat upload')
+      setPreviewUrl(value || null)
+      setCompressedSize(null)
     } finally {
-      setIsCompressing(false)
+      setIsProcessing(false)
     }
   }
 
@@ -110,17 +151,20 @@ export function ImageUpload({
                   <X className="h-4 w-4" />
                 </Button>
               )}
-              {compressedSize !== null && (
+              {isProcessing && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                  <div className="text-center text-white">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-1" />
+                    <p className="text-sm">Mengompresi & mengupload...</p>
+                  </div>
+                </div>
+              )}
+              {compressedSize !== null && !isProcessing && (
                 <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
                   {compressedSize} KB
                 </div>
               )}
             </div>
-            {isCompressing && (
-              <div className="mt-2 text-center text-white text-sm">
-                Mengompresi gambar...
-              </div>
-            )}
           </CardContent>
         </Card>
       ) : (
@@ -132,38 +176,42 @@ export function ImageUpload({
               </div>
               <div className="text-center space-y-1">
                 <p className="text-sm font-medium text-white">
-                  {isCompressing ? 'Mengompresi gambar...' : 'Upload Gambar'}
+                  {isProcessing ? 'Mengompresi & mengupload...' : 'Upload Gambar'}
                 </p>
                 <p className="text-xs text-white">
                   Max {maxSizeMB} MB (dikompresi ke max {maxCompressedKB} KB)
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUploadClick}
-                  disabled={disabled || isCompressing}
-                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Pilih File
-                </Button>
-                {showCamera && (
+              {isProcessing ? (
+                <Loader2 className="h-5 w-5 text-blue-400 animate-spin" />
+              ) : (
+                <div className="flex gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={handleCameraClick}
-                    disabled={disabled || isCompressing}
+                    onClick={handleUploadClick}
+                    disabled={disabled}
                     className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
                   >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Kamera
+                    <Upload className="h-4 w-4 mr-2" />
+                    Pilih File
                   </Button>
-                )}
-              </div>
+                  {showCamera && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCameraClick}
+                      disabled={disabled}
+                      className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
+                    >
+                      <Camera className="h-4 w-4 mr-2" />
+                      Kamera
+                    </Button>
+                  )}
+                </div>
+              )}
               {error && (
                 <p className="text-red-400 text-xs text-center">{error}</p>
               )}
@@ -176,19 +224,19 @@ export function ImageUpload({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/gif,image/webp"
         onChange={handleFileChange}
         className="hidden"
-        disabled={disabled || isCompressing}
+        disabled={disabled || isProcessing}
       />
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/gif,image/webp"
         capture="environment"
         onChange={handleFileChange}
         className="hidden"
-        disabled={disabled || isCompressing}
+        disabled={disabled || isProcessing}
       />
     </div>
   )
