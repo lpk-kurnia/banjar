@@ -1,0 +1,128 @@
+// ============================================
+// PRISMA SCHEMA - SUPABASE (PostgreSQL)
+// ============================================
+// Database: Supabase PostgreSQL
+// Generated with Prisma ORM
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// USER MODEL
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  avatar    String?   @db.Text
+  role      Role      @default(USER)
+  isBanned  Boolean   @default(false)
+  banExpiry DateTime?
+  banReason String?   @db.Text
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  threads         Thread[]
+  comments        Comment[]
+  threadVotes     ThreadVote[]
+  commentVotes    CommentVote[]
+}
+
+enum Role {
+  USER
+  SUPER_ADMIN
+}
+
+// CATEGORY MODEL
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  icon      String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  threads Thread[]
+}
+
+// THREAD MODEL
+model Thread {
+  id          String   @id @default(cuid())
+  title       String
+  content     String   @db.Text
+  image       String?  @db.Text // Base64 compressed image (max 300 KB)
+  categoryId  String
+  authorId    String
+  isPinned    Boolean  @default(false)
+  isLocked    Boolean  @default(false)
+  viewCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  author   User        @relation(fields: [authorId], references: [id])
+  category Category    @relation(fields: [categoryId], references: [id])
+  comments Comment[]
+  votes    ThreadVote[]
+}
+
+// COMMENT MODEL (Nested comments)
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  image     String?  @db.Text // Base64 compressed image (max 300 KB)
+  threadId  String
+  authorId  String
+  parentId  String?  // untuk nested comments (reply)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  thread  Thread        @relation(fields: [threadId], references: [id])
+  author  User          @relation(fields: [authorId], references: [id])
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id])
+  replies Comment[]     @relation("CommentReplies")
+  votes   CommentVote[]
+}
+
+// THREAD VOTE MODEL
+model ThreadVote {
+  id        String   @id @default(cuid())
+  userId    String
+  threadId  String
+  value     Int      @default(1) // 1 = like, -1 = dislike
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id])
+  thread Thread @relation(fields: [threadId], references: [id])
+
+  @@unique([userId, threadId])
+}
+
+// COMMENT VOTE MODEL
+model CommentVote {
+  id        String   @id @default(cuid())
+  userId    String
+  commentId String
+  value     Int      @default(1) // 1 = like, -1 = dislike
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  comment Comment @relation(fields: [commentId], references: [id])
+
+  @@unique([userId, commentId])
+}
+
+// REGISTRATION MODEL (Pendaftaran LPK)
+model Registration {
+  id           String   @id @default(cuid())
+  name         String
+  email        String
+  whatsapp     String
+  address      String   @db.Text
+  program      String   // 'hardware', 'software', 'both'
+  registeredAt DateTime @default(now())
+}
