@@ -1,59 +1,79 @@
-const CACHE_NAME = 'lpk-kurnia-v1'
-const urlsToCache = [
+const CACHE_NAME = 'lpk-kurnia-v2.0.0'
+
+// hanya asset statis, BUKAN halaman dinamis
+const STATIC_ASSETS = [
   '/',
-  '/forum',
   '/manifest.json',
   '/favicon.ico'
 ]
 
+// INSTALL
 self.addEventListener('install', (event) => {
+  self.skipWaiting()
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS)
+    })
   )
 })
 
+// FETCH
 self.addEventListener('fetch', (event) => {
+  const { request } = event
+
+  // ❌ jangan cache halaman HTML dinamis (forum, admin, dll)
+  if (request.destination === 'document') {
+    event.respondWith(fetch(request))
+    return
+  }
+
+  // ❌ jangan ganggu API (Supabase, auth, dll)
+  if (request.url.includes('/api/') || request.url.includes('supabase')) {
+    event.respondWith(fetch(request))
+    return
+  }
+
+  // ✔ cache only static assets
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
+    caches.match(request).then((cached) => {
+      if (cached) return cached
+
+      return fetch(request).then((response) => {
+        if (
+          !response ||
+          response.status !== 200 ||
+          response.type !== 'basic'
+        ) {
           return response
         }
-        return fetch(event.request).then(
-          (response) => {
-            // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response
-            }
 
-            // Clone the response
-            const responseToCache = response.clone()
+        const clone = response.clone()
 
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache)
-              })
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(request, clone)
+        })
 
-            return response
-          }
-        )
+        return response
       })
+    })
   )
 })
 
+// ACTIVATE
 self.addEventListener('activate', (event) => {
-  const cacheWhitelist = [CACHE_NAME]
+  const whitelist = [CACHE_NAME]
+
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName)
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys.map((key) => {
+          if (!whitelist.includes(key)) {
+            return caches.delete(key)
           }
         })
       )
-    })
+    )
   )
+
+  self.clients.claim()
 })
