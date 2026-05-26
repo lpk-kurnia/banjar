@@ -57,6 +57,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
       if (currentSession?.user) {
         // Fetch user data from our API to get role and ban status
+        // This also auto-creates the User row if missing (email signup without confirmation)
         try {
           const res = await fetch('/api/auth/me')
           if (res.ok) {
@@ -96,10 +97,18 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, sessionData) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (event === 'SIGNED_IN') {
-          // Small delay to allow auth callback to finish creating/updating user
+          // Delay to allow auth callback (OAuth) to finish creating user
           await new Promise(resolve => setTimeout(resolve, 500))
         }
         await refreshSession()
+
+        // For SIGNED_IN, do a second refresh after a short delay
+        // This handles email signup where User row needs to be auto-created
+        if (event === 'SIGNED_IN') {
+          setTimeout(async () => {
+            await refreshSession()
+          }, 1000)
+        }
       } else if (event === 'SIGNED_OUT') {
         setSession(null)
         setStatus('unauthenticated')
