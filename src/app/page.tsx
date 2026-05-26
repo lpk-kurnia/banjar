@@ -6,10 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
-import { MessageSquare, Cpu, HardDrive, GraduationCap, Users, CheckCircle2, ArrowRight, MapPin, Phone, Mail, Menu, X, Shield } from 'lucide-react'
+import { MessageSquare, Cpu, HardDrive, GraduationCap, Users, CheckCircle2, ArrowRight, MapPin, Phone, Mail, Menu, X, Shield, Home as HomeIcon } from 'lucide-react'
 import { useState } from 'react'
+import { useAuth } from '@/components/providers/session-provider'
 
 export default function Home() {
+  const { user, status } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -74,19 +76,21 @@ export default function Home() {
             <div className="flex items-center gap-6">
               <a href="#about" className="text-white hover:text-blue-100 transition-colors">Tentang</a>
               <a href="#programs" className="text-white hover:text-blue-100 transition-colors">Program</a>
-              <a href="#register" className="text-white hover:text-blue-100 transition-colors">Daftar</a>
+              <a href="#register" className="text-white hover:text-blue-100 transition-colors">Daftar LPK</a>
               <Button asChild className="bg-blue-800 hover:bg-blue-600 text-white">
                 <a href="/forum">
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Forum
                 </a>
               </Button>
-              <Button asChild className="bg-blue-800 hover:bg-blue-600 text-white">
-                <a href="/admin">
-                  <Shield className="w-4 h-4 mr-2" />
-                  Admin
-                </a>
-              </Button>
+              {user?.role === 'SUPER_ADMIN' && (
+                <Button asChild className="bg-blue-800 hover:bg-blue-600 text-white">
+                  <a href="/admin">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                  </a>
+                </Button>
+              )}
             </div>
           </div>
 
@@ -99,19 +103,21 @@ export default function Home() {
               </div>
               <a href="#about" onClick={() => setIsMenuOpen(false)} className="block text-white hover:text-blue-100 transition-colors py-2">Tentang</a>
               <a href="#programs" onClick={() => setIsMenuOpen(false)} className="block text-white hover:text-blue-100 transition-colors py-2">Program</a>
-              <a href="#register" onClick={() => setIsMenuOpen(false)} className="block text-white hover:text-blue-100 transition-colors py-2">Daftar</a>
+              <a href="#register" onClick={() => setIsMenuOpen(false)} className="block text-white hover:text-blue-100 transition-colors py-2">Daftar LPK</a>
               <Button asChild className="w-full bg-blue-800 hover:bg-blue-600 text-white">
                 <a href="/forum" onClick={() => setIsMenuOpen(false)}>
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Forum
                 </a>
               </Button>
-              <Button asChild className="w-full bg-blue-800 hover:bg-blue-600 text-white">
-                <a href="/admin" onClick={() => setIsMenuOpen(false)}>
-                  <Shield className="w-4 h-4 mr-2" />
-                  Admin
-                </a>
-              </Button>
+              {user?.role === 'SUPER_ADMIN' && (
+                <Button asChild className="w-full bg-blue-800 hover:bg-blue-600 text-white">
+                  <a href="/admin" onClick={() => setIsMenuOpen(false)}>
+                    <Shield className="w-4 h-4 mr-2" />
+                    Admin
+                  </a>
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -124,7 +130,7 @@ export default function Home() {
             Pendaftaran GRATIS
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            Ilmu Komputer Gratis di
+            Belajar Komputer Gratis di
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
               {' '}LPK Kurnia
             </span>
@@ -136,7 +142,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button asChild size="lg" className="bg-blue-800 hover:bg-blue-600 text-white">
               <a href="#register">
-                Daftar Sekarang
+                Daftar Di LPK Kurnia Sekarang
                 <ArrowRight className="w-4 h-4 ml-2" />
               </a>
             </Button>
@@ -316,104 +322,117 @@ export default function Home() {
           </div>
 
           <Card className="bg-blue-950/50 border-blue-800">
-            <CardHeader>
-              <CardTitle className="text-white">Formulir Pendaftaran</CardTitle>
-              <CardDescription className="text-white">
-                Data Anda akan aman dan hanya digunakan untuk keperluan pendaftaran LPK Kurnia.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-white">Nama Lengkap</Label>
-                  <Input
-                    id="name"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-400"
-                    placeholder="Masukkan nama lengkap"
-                  />
+            {submitStatus === 'success' ? (
+              <CardContent className="py-12 text-center space-y-6">
+                <div className="w-20 h-20 bg-green-600/20 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-12 h-12 text-green-400" />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-400"
-                    placeholder="email@contoh.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp" className="text-white">No WhatsApp</Label>
-                  <Input
-                    id="whatsapp"
-                    required
-                    value={formData.whatsapp}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                    className="bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-400"
-                    placeholder="08xxxxxxxxxx"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="text-white">Alamat</Label>
-                  <Textarea
-                    id="address"
-                    required
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className="bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-400 min-h-[80px]"
-                    placeholder="Masukkan alamat lengkap"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="program" className="text-white">Program yang Diminati</Label>
-                  <select
-                    id="program"
-                    required
-                    value={formData.program}
-                    onChange={(e) => setFormData({ ...formData, program: e.target.value })}
-                    className="w-full px-3 py-2 bg-blue-900/50 border border-blue-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Pilih program</option>
-                    <option value="hardware">Hardware</option>
-                    <option value="software">Software</option>
-                    <option value="both">Keduanya (Hardware + Software)</option>
-                  </select>
-                </div>
-
-                {submitStatus === 'success' && (
-                  <div className="p-4 bg-green-900/30 border border-green-700 rounded-lg">
-                    <p className="text-green-300 text-center">
-                      ✓ Pendaftaran berhasil! Kami akan menghubungi Anda segera.
-                    </p>
-                  </div>
-                )}
-
-                {submitStatus === 'error' && (
-                  <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg">
-                    <p className="text-red-300 text-center">
-                      Terjadi kesalahan. Silakan coba lagi.
-                    </p>
-                  </div>
-                )}
-
+                <h3 className="text-2xl font-bold text-white">Pendaftaran Berhasil!</h3>
+                <p className="text-white/70 max-w-sm mx-auto">
+                  Terima kasih telah mendaftar di LPK Kurnia. Kami akan menghubungi Anda segera melalui WhatsApp atau email.
+                </p>
                 <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-blue-800 hover:bg-blue-600 text-white"
+                  onClick={() => setSubmitStatus('idle')}
+                  className="bg-blue-800 hover:bg-blue-600 text-white"
                 >
-                  {isSubmitting ? 'Mengirim...' : 'Daftar Sekarang'}
+                  <HomeIcon className="w-4 h-4 mr-2" />
+                  Kembali ke Beranda
                 </Button>
-              </form>
-            </CardContent>
+              </CardContent>
+            ) : (
+              <>
+                <CardHeader>
+                  <CardTitle className="text-white">Formulir Pendaftaran</CardTitle>
+                  <CardDescription className="text-white">
+                    Data Anda akan aman dan hanya digunakan untuk keperluan pendaftaran LPK Kurnia.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-white">Nama Lengkap</Label>
+                      <Input
+                        id="name"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-400"
+                        placeholder="Masukkan nama lengkap"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-white">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className="bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-400"
+                        placeholder="email@contoh.com"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="whatsapp" className="text-white">No WhatsApp</Label>
+                      <Input
+                        id="whatsapp"
+                        required
+                        value={formData.whatsapp}
+                        onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                        className="bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-400"
+                        placeholder="08xxxxxxxxxx"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address" className="text-white">Alamat</Label>
+                      <Textarea
+                        id="address"
+                        required
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        className="bg-blue-900/50 border-blue-700 text-white placeholder:text-blue-400 min-h-[80px]"
+                        placeholder="Masukkan alamat lengkap"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="program" className="text-white">Program yang Diminati</Label>
+                      <select
+                        id="program"
+                        required
+                        value={formData.program}
+                        onChange={(e) => setFormData({ ...formData, program: e.target.value })}
+                        className="w-full px-3 py-2 bg-blue-900/50 border border-blue-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Pilih program</option>
+                        <option value="hardware">Hardware</option>
+                        <option value="software">Software</option>
+                        <option value="both">Keduanya (Hardware + Software)</option>
+                      </select>
+                    </div>
+
+                    {submitStatus === 'error' && (
+                      <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg">
+                        <p className="text-red-300 text-center">
+                          Terjadi kesalahan. Silakan coba lagi.
+                        </p>
+                      </div>
+                    )}
+
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-blue-800 hover:bg-blue-600 text-white"
+                    >
+                      {isSubmitting ? 'Mengirim...' : 'Daftar Di LPK Kurnia Sekarang'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </>
+            )}
           </Card>
         </div>
       </section>
@@ -428,7 +447,8 @@ export default function Home() {
                 <span className="text-xl font-bold text-white">LPK Kurnia</span>
               </div>
               <p className="text-white text-sm">
-                lembaga pendidikan non-formal di Kota Banjar yang berfokus pada pelatihan keterampilan kerja, khususnya di bidang teknologi informasi dan aplikasi perkantoran secara gratis.
+                Lembaga Pelatihan Kerja yang berfokus pada pendidikan komputer
+                hardware dan software secara gratis.
               </p>
             </div>
 
@@ -437,15 +457,15 @@ export default function Home() {
               <ul className="space-y-2 text-white text-sm">
                 <li className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  <span>Jl. Tentara Pelajar No. 25, Sumanding, Kota Banjar, Jawa Barat</span>
+                  <span>Jl. Contoh No. 123, Indonesia</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Phone className="w-4 h-4" />
-                  <span>(0265) 2732082</span>
+                  <span>+62 812-3456-7890</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="w-4 h-4" />
-                  <span>lpkkurnia@outlook.com</span>
+                  <span>info@lpkkurnia.com</span>
                 </li>
               </ul>
             </div>
@@ -460,7 +480,7 @@ export default function Home() {
                   <a href="#programs" className="hover:text-blue-100 transition-colors">Program</a>
                 </li>
                 <li>
-                  <a href="#register" className="hover:text-blue-100 transition-colors">Daftar</a>
+                  <a href="#register" className="hover:text-blue-100 transition-colors">Daftar LPK</a>
                 </li>
                 <li>
                   <a href="/forum" className="hover:text-blue-100 transition-colors">Forum</a>
@@ -471,7 +491,7 @@ export default function Home() {
 
           <div className="border-t border-blue-800 pt-8 text-center">
             <p className="text-white text-sm">
-              © {new Date().getFullYear()} LPK Kurnia. By GTX Semua hak dilindungi.
+              © {new Date().getFullYear()} LPK Kurnia. Semua hak dilindungi.
             </p>
           </div>
         </div>

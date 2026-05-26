@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import { Role } from '@prisma/client'
@@ -36,6 +36,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [status, setStatus] = useState<'loading' | 'authenticated' | 'unauthenticated'>('loading')
+  const refreshLock = useRef(false)
 
   const supabase = createClient()
 
@@ -52,14 +53,22 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshSession = useCallback(async () => {
+    // Prevent concurrent refreshes
+    if (refreshLock.current) return
+    refreshLock.current = true
+
     try {
       const { data: { session: currentSession } } = await supabase.auth.getSession()
 
       if (currentSession?.user) {
-        // Fetch user data from our API to get role and ban status
-        // This also auto-creates the User row if missing (email signup without confirmation)
+        // Fetch user data from our API (with timeout to prevent hanging)
         try {
-          const res = await fetch('/api/auth/me')
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 8000)
+
+          const res = await fetch('/api/auth/me', { signal: controller.signal })
+          clearTimeout(timeoutId)
+
           if (res.ok) {
             const data = await res.json()
             const user: AuthUser = {
@@ -76,9 +85,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             return
           }
         } catch {
-          // If API fails, use metadata from Supabase session
+          // API failed or timed out — fall back to Supabase session metadata
         }
 
+        // Fallback: use metadata from Supabase session (instant, no DB call)
         const user = mapUser(currentSession.user)
         setSession({ user })
         setStatus('authenticated')
@@ -89,25 +99,21 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       setSession(null)
       setStatus('unauthenticated')
+    } finally {
+      refreshLock.current = false
     }
   }, [supabase, mapUser])
 
   useEffect(() => {
     // Listen for auth changes (also fires with INITIAL_SESSION on mount)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, sessionData) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (event === 'SIGNED_IN') {
-          // Delay to allow auth callback (OAuth) to finish creating user
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
         await refreshSession()
 
-        // For SIGNED_IN, do a second refresh after a short delay
+        // For SIGNED_IN, do a second refresh after delay
         // This handles email signup where User row needs to be auto-created
         if (event === 'SIGNED_IN') {
-          setTimeout(async () => {
-            await refreshSession()
-          }, 1000)
+          setTimeout(() => refreshSession(), 1500)
         }
       } else if (event === 'SIGNED_OUT') {
         setSession(null)

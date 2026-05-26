@@ -169,26 +169,24 @@ export default function ForumPage() {
 
             {/* Right Side - Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-              <Link href="/">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
-                >
-                  <Home className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Beranda</span>
-                </Button>
-              </Link>
-              <Link href="/#registration">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Daftar LPK</span>
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
+                onClick={() => { window.location.href = '/' }}
+              >
+                <Home className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Beranda</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
+                onClick={() => { window.location.href = '/#registration' }}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Daftar LPK</span>
+              </Button>
               <AuthButton />
             </div>
           </div>
@@ -216,7 +214,7 @@ export default function ForumPage() {
                     >
                       <div className="flex items-center justify-between">
                         <span>Semua Thread</span>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs text-white border-white/30">
                           {threads.length}
                         </Badge>
                       </div>
@@ -235,7 +233,7 @@ export default function ForumPage() {
                           <span>
                             {category.icon} {category.name}
                           </span>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs text-white border-white/30">
                             {category._count.threads}
                           </Badge>
                         </div>

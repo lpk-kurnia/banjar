@@ -285,26 +285,24 @@ export default function ThreadDetailPage({ params }: { params: Promise<{ id: str
 
             {/* Right Side - Actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-              <Link href="/">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
-                >
-                  <Home className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Beranda</span>
-                </Button>
-              </Link>
-              <Link href="/#registration">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Daftar LPK</span>
-                </Button>
-              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
+                onClick={() => { window.location.href = '/' }}
+              >
+                <Home className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Beranda</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-blue-800 hover:bg-blue-600 text-white border-blue-800"
+                onClick={() => { window.location.href = '/#registration' }}
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Daftar LPK</span>
+              </Button>
               <AuthButton />
             </div>
           </div>

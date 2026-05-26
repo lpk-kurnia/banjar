@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lpk-kurnia-v2.0.1'
+const CACHE_NAME = 'lpk-kurnia-v2.0.3'
 
 // hanya asset statis, BUKAN halaman dinamis
 const STATIC_ASSETS = [
